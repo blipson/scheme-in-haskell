@@ -7,6 +7,7 @@ import Numeric (readOct, readHex)
 import Data.Char (toLower)
 import Data.Ratio
 import Data.Complex
+import Data.Array
 
 data LispVal = Atom String
 		| List [LispVal]
@@ -18,6 +19,7 @@ data LispVal = Atom String
 		| Float Double
 		| Ratio Rational
 		| Complex (Complex Double)
+		| Vector (Array Int LispVal)
 
 hex2dig x = fst $ readHex x !! 0
 oct2dig x = fst $ readOct x !! 0
@@ -127,6 +129,11 @@ parseComplex = do
 	char 'i'
 	return $ Complex (toDouble x :+ toDouble y)
 
+parseVector :: Parser LispVal
+parseVector = do
+	arrayValues <- sepBy parseExpr spaces
+	return $ Vector (listArray (0,(length arrayValues - 1)) arrayValues)
+
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
 	<|> parseString
@@ -139,6 +146,11 @@ parseExpr = parseAtom
 	<|> parseQuoted
 	<|> parseQuasiQuoted
 	<|> parseUnQuote
+	<|> try (do
+			string "#("
+			x <- parseVector
+			char ')'
+			return x)
 	<|> do
 		char '('
 		x <- try parseList <|> parseDottedList
