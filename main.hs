@@ -29,6 +29,19 @@ bin2dig = bin2dig' 0
 bin2dig' digint "" = digint
 bin2dig' digint (x:xs) = let old = 2 * digint + (if x == '0' then 0 else 1) in bin2dig' old xs
 
+symbolp, numberp, stringp, boolp, listp :: LispVal -> LispVal
+symbolp (Atom _)   = Bool True
+symbolp _          = Bool False
+numberp (Number _) = Bool True
+numberp _          = Bool False
+stringp (String _) = Bool True
+stringp _          = Bool False
+boolp   (Bool _)   = Bool True
+boolp   _          = Bool False
+listp   (List _)   = Bool True
+listp   (DottedList _ _) = Bool True
+listp   _          = Bool False
+
 toDouble :: LispVal -> Double
 toDouble(Float f) = realToFrac f
 toDouble(Number n) = fromIntegral n
@@ -62,10 +75,18 @@ primitives = [("+", numericBinop (+)),
 			  ("/", numericBinop div),
 			  ("mod", numericBinop mod),
 			  ("quotient", numericBinop quot),
-			  ("remainder", numericBinop rem)]
+			  ("remainder", numericBinop rem),
+			  ("symbol?", unaryOp symbolp),
+			  ("string?", unaryOp stringp),
+			  ("number?", unaryOp numberp),
+			  ("bool?", unaryOp boolp),
+			  ("list?", unaryOp listp)]
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
 numericBinop op params = Number $ foldl1 op $ map unpackNum params
+
+unaryOp :: (LispVal -> LispVal) -> [LispVal] -> LispVal
+unaryOp f [v] = f v
 
 unpackNum :: LispVal -> Integer
 unpackNum (Number n) = n
