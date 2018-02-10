@@ -6,6 +6,7 @@ import Control.Monad (liftM)
 import Numeric (readOct, readHex)
 import Data.Char (toLower)
 import Data.Ratio
+import Data.Complex
 
 data LispVal = Atom String
 		| List [LispVal]
@@ -16,12 +17,17 @@ data LispVal = Atom String
 		| Char Char
 		| Float Double
 		| Ratio Rational
+		| Complex (Complex Double)
 
 hex2dig x = fst $ readHex x !! 0
 oct2dig x = fst $ readOct x !! 0
 bin2dig = bin2dig' 0
 bin2dig' digint "" = digint
 bin2dig' digint (x:xs) = let old = 2 * digint + (if x == '0' then 0 else 1) in bin2dig' old xs
+
+toDouble :: LispVal -> Double
+toDouble(Float f) = realToFrac f
+toDouble(Number n) = fromIntegral n
 
 escapedChars :: Parser String
 escapedChars = do
@@ -113,9 +119,18 @@ parseNumber = do
 	num <- parseDigital1 <|> parseDigital2 <|> parseHex <|> parseOct <|> parseBin
 	return $ num
 
+parseComplex :: Parser LispVal
+parseComplex = do
+	x <- (try parseFloat <|> parseDigital1)
+	char '+'
+	y <- (try parseFloat <|> parseDigital1)
+	char 'i'
+	return $ Complex (toDouble x :+ toDouble y)
+
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
 	<|> parseString
+	<|> try parseComplex
 	<|> try parseFloat
 	<|> try parseRatio
 	<|> try parseNumber
