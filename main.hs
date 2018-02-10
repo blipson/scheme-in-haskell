@@ -21,6 +21,8 @@ data LispVal = Atom String
 		| Complex (Complex Double)
 		| Vector (Array Int LispVal)
 
+instance Show LispVal where show = showVal
+
 hex2dig x = fst $ readHex x !! 0
 oct2dig x = fst $ readOct x !! 0
 bin2dig = bin2dig' 0
@@ -30,6 +32,18 @@ bin2dig' digint (x:xs) = let old = 2 * digint + (if x == '0' then 0 else 1) in b
 toDouble :: LispVal -> Double
 toDouble(Float f) = realToFrac f
 toDouble(Number n) = fromIntegral n
+
+unwordsList :: [LispVal] -> String
+unwordsList = unwords . map showVal
+
+showVal :: LispVal -> String
+showVal (String contents) = "\"" ++ contents ++ "\""
+showVal (Atom name) = name
+showVal (Number contents) = show contents
+showVal (Bool True) = "#t"
+showVal (Bool False) = "#f"
+showVal (List contents) = "(" ++ unwordsList contents ++ ")"
+showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
 
 escapedChars :: Parser String
 escapedChars = do
@@ -170,7 +184,7 @@ symbol = oneOf "!$%&|*+-/:<=>?@^_~"
 readExpr :: String -> String
 readExpr input = case parse parseExpr "lisp" input of
 	Left err -> "No match: " ++ show err
-	Right val -> "Found value"
+	Right val -> "Found " ++ show val
 
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
