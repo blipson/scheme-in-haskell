@@ -5,6 +5,7 @@ import System.Environment
 import Control.Monad (liftM)
 import Numeric (readOct, readHex)
 import Data.Char (toLower)
+import Data.Ratio
 
 data LispVal = Atom String
 		| List [LispVal]
@@ -14,6 +15,7 @@ data LispVal = Atom String
 		| Bool Bool
 		| Char Char
 		| Float Double
+		| Ratio Rational
 
 hex2dig x = fst $ readHex x !! 0
 oct2dig x = fst $ readOct x !! 0
@@ -31,6 +33,13 @@ escapedChars = do
 		't' -> do return "\t"
 		'n' -> do return "\n"
 		'r' -> do return "\r"
+
+parseRatio :: Parser LispVal
+parseRatio = do
+	x <- many1 digit
+	char '/'
+	y <- many1 digit
+	return $ Ratio ((read x) % (read y))
 
 parseChar :: Parser LispVal
 parseChar = do
@@ -108,6 +117,7 @@ parseExpr :: Parser LispVal
 parseExpr = parseAtom
 	<|> parseString
 	<|> try parseFloat
+	<|> try parseRatio
 	<|> try parseNumber
 	<|> try parseBool
 	<|> try parseChar
