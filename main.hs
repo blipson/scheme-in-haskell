@@ -2,8 +2,9 @@ module Main where
 import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
-import Control.Monad
-import Numeric
+import Control.Monad (liftM)
+import Numeric (readOct, readHex)
+import Data.Char (toLower)
 
 data LispVal = Atom String
 		| List [LispVal]
@@ -11,6 +12,7 @@ data LispVal = Atom String
 		| Number Integer
 		| String String
 		| Bool Bool
+		| Char Char
 
 hex2dig x = fst $ readHex x !! 0
 oct2dig x = fst $ readOct x !! 0
@@ -29,6 +31,15 @@ escapedChars = do
 		'n' -> do return "\n"
 		'r' -> do return "\r"
 
+parseChar :: Parser LispVal
+parseChar = do
+	try $ string "#\\"
+	c <- many1 letter
+	return $ case (map toLower c) of
+		"space" -> Char ' '
+		"newline" -> Char '\n'
+		[x] -> Char x
+
 parseString :: Parser LispVal
 parseString = do
 	char '"'
@@ -41,8 +52,7 @@ parseAtom = do
 	first <- letter <|> symbol
 	rest <- many (letter <|> digit <|> symbol)
 	let atom = first:rest
-	return $ case atom of
-		_    -> Atom atom
+	return $ Atom atom	
 
 parseBool :: Parser LispVal
 parseBool = do
@@ -89,8 +99,9 @@ parseNumber = do
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
 	<|> parseString
-	<|> parseNumber
-	<|> parseBool
+	<|> try parseNumber
+	<|> try parseBool
+	<|> try parseChar
 
 spaces :: Parser ()
 spaces = skipMany1 space
