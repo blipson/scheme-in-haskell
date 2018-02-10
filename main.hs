@@ -42,6 +42,12 @@ listp   (List _)   = Bool True
 listp   (DottedList _ _) = Bool True
 listp   _          = Bool False
 
+symbol2string, string2symbol :: LispVal -> LispVal
+symbol2string (Atom s)   = String s
+symbol2string _          = String ""
+string2symbol (String s) = Atom s
+string2symbol _          = Atom ""
+
 toDouble :: LispVal -> Double
 toDouble(Float f) = realToFrac f
 toDouble(Number n) = fromIntegral n
@@ -80,7 +86,9 @@ primitives = [("+", numericBinop (+)),
 			  ("string?", unaryOp stringp),
 			  ("number?", unaryOp numberp),
 			  ("bool?", unaryOp boolp),
-			  ("list?", unaryOp listp)]
+			  ("list?", unaryOp listp),
+			  ("symbol->string", unaryOp symbol2string),
+			  ("string->symbol", unaryOp string2symbol)]
 
 numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
 numericBinop op params = Number $ foldl1 op $ map unpackNum params
