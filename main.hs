@@ -13,6 +13,7 @@ data LispVal = Atom String
 		| String String
 		| Bool Bool
 		| Char Char
+		| Float Double
 
 hex2dig x = fst $ readHex x !! 0
 oct2dig x = fst $ readOct x !! 0
@@ -91,6 +92,13 @@ parseBin = do
 	c <- many1 (oneOf "10")
 	return $ Number (bin2dig c)
 
+parseFloat :: Parser LispVal
+parseFloat = do
+	whole <- many1 digit
+	char '.'
+	decimal <- many1 digit
+	return $ Float (read (whole++"."++decimal) :: Double)
+
 parseNumber :: Parser LispVal
 parseNumber = do
 	num <- parseDigital1 <|> parseDigital2 <|> parseHex <|> parseOct <|> parseBin
@@ -99,6 +107,7 @@ parseNumber = do
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
 	<|> parseString
+	<|> try parseFloat
 	<|> try parseNumber
 	<|> try parseBool
 	<|> try parseChar
