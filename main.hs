@@ -11,12 +11,18 @@ data LispVal = Atom String
 		| String String
 		| Bool Bool
 
+escapedChars :: Parser String
+escapedChars = do
+	char '\\'
+	c <- oneOf "\\\""
+	return [c]
+
 parseString :: Parser LispVal
 parseString = do
 	char '"'
-	x <- many (noneOf "\"")
+	x <- many $ many1 (noneOf "\"\\") <|> escapedChars
 	char '"'
-	return $ String x
+	return $ String (concat x)
 
 parseAtom :: Parser LispVal
 parseAtom = do
