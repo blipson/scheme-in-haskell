@@ -45,6 +45,12 @@ showVal (Bool False) = "#f"
 showVal (List contents) = "(" ++ unwordsList contents ++ ")"
 showVal (DottedList head tail) = "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
 
+eval :: LispVal -> LispVal
+eval val@(String _) = val
+eval val@(Number _) = val
+eval val@(Bool _) = val
+eval (List [Atom "quote", val]) = val
+
 escapedChars :: Parser String
 escapedChars = do
 	char '\\'
@@ -181,10 +187,10 @@ spaces = skipMany1 space
 symbol :: Parser Char
 symbol = oneOf "!$%&|*+-/:<=>?@^_~"
 
-readExpr :: String -> String
+readExpr :: String -> LispVal
 readExpr input = case parse parseExpr "lisp" input of
-	Left err -> "No match: " ++ show err
-	Right val -> "Found " ++ show val
+    Left err -> String $ "No match: " ++ show err
+    Right val -> val
 
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
@@ -210,7 +216,5 @@ parseExpr = parseAtom
 		return x
 
 main :: IO ()
-main = do
-	(expr:_) <- getArgs
-	putStrLn (readExpr expr)
+main = getArgs >>= print . eval . readExpr . head
 
