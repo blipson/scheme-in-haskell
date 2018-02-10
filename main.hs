@@ -137,11 +137,25 @@ parseExpr = parseAtom
 	<|> try parseBool
 	<|> try parseChar
 	<|> parseQuoted
+	<|> parseQuasiQuoted
+	<|> parseUnQuote
 	<|> do
 		char '('
 		x <- try parseList <|> parseDottedList
 		char ')'
 		return x
+
+parseQuasiQuoted :: Parser LispVal
+parseQuasiQuoted = do
+	char '`'
+	x <- parseExpr
+	return $ List [Atom "quasiquote", x]
+
+parseUnQuote :: Parser LispVal
+parseUnQuote = do
+	char ','
+	x <- parseExpr
+	return $ List [Atom "unquote", x]
 
 parseList :: Parser LispVal
 parseList = liftM List $ sepBy parseExpr spaces
